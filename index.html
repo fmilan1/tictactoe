@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tic Tac Toe</title>
+        <style>
+            body {
+                height: 100svh;
+                height: 100dvh;
+                height: 100vh;
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+            }
+            
+            :root {
+                --nextShape: 'X';
+            }
+            
+            .container {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(3, 1fr);
+                gap: 5px;
+                width: max-content;
+                position: relative;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+            }
+            
+            .item {
+                width: 6rem;
+                flex-grow: 1;
+                height: 6rem;
+                background-color: rgb(236, 236, 236);
+                border-radius: 20px;
+                display: grid;
+                place-items: center;
+                font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+                font-size: 20px;
+                cursor: pointer;
+                font-size: 3.5rem;
+            }
+
+            .item[shape="O"]::before {
+                color: cadetblue;
+            }
+            
+            .item[shape="X"]::before {
+                color: crimson;
+            }
+            
+            .item::before {
+                content: attr(shape);
+            }
+
+            .item.selected {
+                background-color: rgb(255, 255, 110);
+            }
+
+            .item.win::before {
+                animation: 0.75s win infinite;
+             }
+
+            @keyframes win {
+                0%{
+                    scale: 1;
+                }
+                50% {
+                    scale: 2;
+                }
+                100% {
+                    scale: 1;
+                }
+            }
+
+            .item.possible {
+                background-color: lightgreen;
+            }
+
+            .item.possible::before {
+                color: rgba(135, 135, 135, .3);                
+            }
+
+            .item.notpossible {
+                background-color: salmon;
+            }
+
+            @keyframes show {
+                from {
+                    height: 0;
+                }
+                to {
+                    height: var(--size);
+                }
+            }
+            
+            .checkbox {
+                display: none;
+            }
+            
+            .checkmark {
+                cursor: pointer;
+                width: 50px;
+                aspect-ratio: 3 / 1;
+                border-radius: 25px;
+                background-color: transparent;
+                border: 4px solid rgb(235, 235, 235);
+                position: relative;
+                display: grid;
+                align-items: center;
+                justify-items: center;
+                --checkedColor: rgb(0, 255, 157);
+                transition: all .2s;
+            }
+            
+            .checkmark::before {
+                transition: all .2s;
+                content: '';
+                position: relative;
+                aspect-ratio: 1 / 1;
+                width: 25%;
+                border-radius: 50%;
+                background-color: rgb(235, 235, 235);
+                left: -33%;
+            }
+            
+            .checkbox:checked ~ .checkmark::before {
+                background-color: var(--checkedColor);
+                left: 33%;
+            }
+            
+            .checkbox:checked ~ .checkmark {
+                border: 4px solid var(--checkedColor);
+            }
+        </style>
+    </head>
+<body>
+    <div>3 shapes mode
+        <input type="checkbox" class="checkbox" id="cb0">
+        <label for="cb0" class="checkmark"></label>
+    </div>
+    <div class="container">
+        <div class="item" shape=" "></div>
+        <div class="item" shape=" "></div>
+        <div class="item" shape=" "></div>
+        <div class="item" shape=" "></div>
+        <div class="item" shape=" "></div>
+        <div class="item" shape=" "></div>
+        <div class="item" shape=" "></div>
+        <div class="item" shape=" "></div>
+        <div class="item" shape=" "></div>
+    </div>
+
+    <script>
+        const gamemodeCheckbox = document.querySelector('#cb0');
+        let shapesLeft = 6;
+
+        const root = document.querySelector(':root');
+        const shapes = ["X", "O"];
+        let nextShapeIdx = 0;
+        const board = document.querySelectorAll(".item");
+        let end = false;
+        board.forEach(item => {
+            item.addEventListener('click', () => {
+                item.classList.remove('possible');
+                if (end) return;
+                if (shapesLeft <= 0) {
+                    moveShape(item);
+                }
+                else {
+                    if (gamemodeCheckbox.checked) shapesLeft--;
+                    putShape(item);
+                }
+            }); 
+            item.addEventListener('mouseenter', () => {
+                if (item.getAttribute('shape') == " ") {
+                    if (shapesLeft > 0 || (selected != null && selected.classList.contains('selected'))) {
+                        item.classList.add('possible');
+                    }
+                    else {
+                        item.classList.add('notpossible');
+                    }
+                }
+                else {
+                    if ((shapesLeft == 0 && item.getAttribute('shape') != shapes[nextShapeIdx]) || (item.getAttribute('shape') != " " && shapesLeft > 0)) {
+                        item.classList.add('notpossible');
+                    }
+                    else if (item.getAttribute('shape') == " " || (item.getAttribute('shape') == shapes[nextShapeIdx])) {
+                        item.classList.add('possible');
+                    }
+                }
+            });
+            item.addEventListener('mouseout', () => {
+                item.classList.remove('possible');
+                item.classList.remove('notpossible');
+            });
+        });
+        
+        function putShape(item) {
+            if (item.getAttribute('shape') != " ") return;
+            item.setAttribute('shape', shapes[nextShapeIdx]);
+            nextShapeIdx = 1 - nextShapeIdx;
+            root.style.setProperty('--nextShape', '"' + shapes[nextShapeIdx] + '"');
+            checkWin();            
+        }
+
+        let selected;
+        function moveShape(item) {
+
+
+            if (item.getAttribute('shape') == shapes[nextShapeIdx]) {
+                item.classList.toggle('selected');
+                if (selected != null && selected != item && selected.classList.contains('selected')) {
+                    selected.classList.remove('selected');
+                }
+                selected = item;
+            }
+            else if (item.getAttribute('shape') == " " && selected != null && selected.classList.contains('selected')) {
+                item.setAttribute('shape', shapes[nextShapeIdx]);
+                selected.classList.remove('selected');
+                selected.setAttribute('shape', " ");
+                nextShapeIdx = 1 - nextShapeIdx;
+                checkWin();
+            }
+
+
+
+        }
+
+        function checkWin() {
+            for (let i = 0; i < 3; i++) {
+                if (board[i].getAttribute('shape') != " " && board[i].getAttribute('shape') == board[i + 3].getAttribute('shape') && board[i].getAttribute('shape') == board[i + 6].getAttribute('shape')) {
+                    board[i].classList.add('win');
+                    board[i + 3].classList.add('win');
+                    board[i + 6].classList.add('win');
+                    end = true;
+                }
+            }
+            for (let i = 0; i < 9; i += 3) {
+                if (board[i].getAttribute('shape') != " " && board[i].getAttribute('shape') == board[i + 1].getAttribute('shape') && board[i].getAttribute('shape') == board[i + 2].getAttribute('shape')) {
+                    board[i].classList.add('win');
+                    board[i + 1].classList.add('win');
+                    board[i + 2].classList.add('win');
+                    end = true;
+                }
+            }
+            if (board[0].getAttribute('shape') != " " && board[0].getAttribute('shape') == board[4].getAttribute('shape') && board[0].getAttribute('shape') == board[8].getAttribute('shape')) {
+                board[0].classList.add('win');
+                board[4].classList.add('win');
+                board[8].classList.add('win');
+                end = true;
+            }
+            if (board[2].getAttribute('shape') != " " && board[2].getAttribute('shape') == board[4].getAttribute('shape') && board[2].getAttribute('shape') == board[6].getAttribute('shape')) {
+                board[2].classList.add('win');
+                board[4].classList.add('win');
+                board[6].classList.add('win');
+                end = true;
+            }
+        }
+    </script>
+</body>
+</html>
